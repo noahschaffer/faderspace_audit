@@ -1,0 +1,8 @@
+# Source audio and its local index stay on this machine; docs/ is the published copy.
+/assets/
+/manifest.js
+
+__pycache__/
+.DS_Store
+._*
+.claude/

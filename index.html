@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FaderSpace Direction Audition</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cg stroke='%2398a2b3' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='M5 3v14M10 3v14M15 3v14'/%3E%3C/g%3E%3Crect x='2.5' y='10' width='5' height='3.2' rx='1' fill='%232563eb'/%3E%3Crect x='7.5' y='5' width='5' height='3.2' rx='1' fill='%2398a2b3'/%3E%3Crect x='12.5' y='12' width='5' height='3.2' rx='1' fill='%23e8590c'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 20 20" aria-hidden="true">
+          <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".45">
+            <path d="M5 3v14M10 3v14M15 3v14"/>
+          </g>
+          <rect x="2.5" y="10" width="5" height="3.2" rx="1" style="fill: var(--neg)"/>
+          <rect x="7.5" y="5" width="5" height="3.2" rx="1" style="fill: var(--text-2)"/>
+          <rect x="12.5" y="12" width="5" height="3.2" rx="1" style="fill: var(--pos)"/>
+        </svg>
+        <div>
+          <div class="brand-name">faderspace</div>
+          <div class="brand-sub">PCA direction audition</div>
+        </div>
+      </div>
+
+      <section class="side-section">
+        <label class="label" for="experiment">Experiment</label>
+        <div class="select-wrap">
+          <select id="experiment"></select>
+        </div>
+        <p class="exp-summary" id="exp-summary"></p>
+      </section>
+
+      <section class="side-section">
+        <div class="label">Directions</div>
+        <nav class="dir-grid" id="dir-grid" aria-label="Directions"></nav>
+      </section>
+
+      <details class="config" id="config" hidden>
+        <summary>Run config</summary>
+        <pre></pre>
+      </details>
+
+      <section class="shortcuts" aria-label="Keyboard shortcuts">
+        <div class="label">Keyboard</div>
+        <dl>
+          <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
+          <dt><kbd>↑</kbd><kbd>↓</kbd></dt><dd>Previous / next example</dd>
+          <dt><kbd>←</kbd><kbd>→</kbd></dt><dd>Negative / positive side</dd>
+          <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Play rank</dd>
+          <dt><kbd>[</kbd><kbd>]</kbd></dt><dd>Previous / next direction</dd>
+          <dt><kbd>A</kbd></dt><dd>Toggle auto-advance</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Stop</dd>
+        </dl>
+      </section>
+    </aside>
+
+    <main class="main" id="main">
+      <header class="topbar">
+        <div>
+          <div class="crumb" id="crumb"></div>
+          <h1 id="title">Direction</h1>
+        </div>
+        <div class="controls">
+          <button class="switch" id="auto" type="button" role="switch" aria-checked="true" title="Play the next example when one finishes (A)">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            Auto-advance
+          </button>
+          <div class="stepper">
+            <button id="prev" type="button" title="Previous direction ([)">
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3.5 5.5 8l4.5 4.5"/></svg>
+              <span>Prev</span>
+            </button>
+            <button id="next" type="button" title="Next direction (])">
+              <span>Next</span>
+              <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div class="columns">
+        <section class="column neg" aria-labelledby="head-neg">
+          <header class="col-head">
+            <h2 id="head-neg"><span class="sign" aria-hidden="true">−</span>Negative</h2>
+            <span class="col-note" id="note-neg"></span>
+          </header>
+          <ol class="clips" id="list-neg"></ol>
+        </section>
+        <section class="column pos" aria-labelledby="head-pos">
+          <header class="col-head">
+            <h2 id="head-pos"><span class="sign" aria-hidden="true">+</span>Positive</h2>
+            <span class="col-note" id="note-pos"></span>
+          </header>
+          <ol class="clips" id="list-pos"></ol>
+        </section>
+      </div>
+
+      <aside class="details" id="details" aria-label="Selected example" hidden>
+        <div class="details-head">
+          <span class="sign" aria-hidden="true"></span>
+          <strong id="details-title"></strong>
+          <span id="details-meta"></span>
+        </div>
+        <p class="details-text" id="details-text"></p>
+      </aside>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
