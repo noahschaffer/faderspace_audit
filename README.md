@@ -9,6 +9,11 @@ A static page for listening to the strongest negative and positive examples alon
    rank, such as `prompt_10_variant_9`, are shown on the clip. A `.hydra/config.yaml` next to the
    directions is shown under "Run config".
 
+   An experiment can also have middle examples (activation near zero along the direction), named
+   `mid_<rank>_…wav` (rank 0 = closest to zero). Experiments that have them show a fader with three
+   stops, negative / middle / positive, above a single list of that group's examples, instead of
+   the two columns.
+
    To show prompt text, add the prompt list to the experiment folder, one prompt per line:
    `assets/<experiment>/prompts.txt`, or any name if it's the folder's only `.txt` file. Line N
    (counting from 0) is shown on every clip named `prompt_N`.
@@ -40,8 +45,8 @@ python3 build_site.py
 
 This rewrites `docs/`: the same page, its manifest, and one MP3 per direction
 (`audio/<experiment>/direction_<k>.mp3`, each direction's clips at 192 kbps stored back to back; the page
-cuts each clip out by byte range). `musiccaps_trumpet` comes to about 150 MB, and GitHub Pages takes sites
-up to 1 GB. To check it locally, open http://localhost:8000/docs/ with the server from step 3.
+cuts each clip out by byte range). An experiment with 10 clips per direction comes to about 150 MB, one with
+middle examples (15 per direction) about 230 MB, and GitHub Pages takes sites up to 1 GB. To check it locally, open http://localhost:8000/docs/ with the server from step 3.
 
 `assets/` and the local `manifest.js` are not committed (see `.gitignore`), so the repository holds the
 code and `docs/`.
@@ -71,7 +76,7 @@ link can listen, and the "Run config" panel shows the cluster path from `.hydra/
 | --- | --- |
 | `Space` | Play / pause the selected example |
 | `↑` `↓` | Previous / next example (playback follows if something is playing) |
-| `←` `→` | Negative / positive side, same rank |
+| `←` `→` | Negative / positive side, same rank (with middle examples: move the fader one stop) |
 | `1`–`9` | Play that rank on the current side |
 | `[` `]` | Previous / next direction |
 | `A` | Toggle auto-advance (play the next example when one ends) |
@@ -80,3 +85,5 @@ link can listen, and the "Run config" panel shows the cluster path from `.hydra/
 Click a waveform to play from that point. Hover a clip's prompt number to highlight the other examples from the same prompt.
 Cards show the first two lines of each prompt; the bar at the bottom shows the selected example's full prompt.
 The URL tracks the experiment and direction (`#musiccaps_trumpet.17`), so links reopen the same view.
+Without one, the page opens `DEFAULT_EXPERIMENT` (set at the top of `app.js`), or the first experiment if
+that one isn't there.

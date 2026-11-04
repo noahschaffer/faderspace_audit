@@ -5,9 +5,14 @@
   'use strict';
 
   let manifest = null;
-  const SIDES = ['neg', 'pos'];
-  const SIDE_NAME = { neg: 'Negative', pos: 'Positive' };
-  const SIDE_SIGN = { neg: '−', pos: '+' };
+  // Opens when the URL doesn't name an experiment (falls back to the manifest's first).
+  const DEFAULT_EXPERIMENT = 'magentart_trumpet_6k';
+  // 'mid' (examples near zero along the direction) is optional. Experiments that have it show one
+  // group at a time, picked with the fader; the others show negative | positive side by side.
+  const SIDES = ['neg', 'mid', 'pos'];
+  const SIDE_NAME = { neg: 'Negative', mid: 'Middle', pos: 'Positive' };
+  const SIDE_SIGN = { neg: '−', mid: '0', pos: '+' };
+  const RANK_MEANS = { neg: 'strongest', mid: 'closest to zero', pos: 'strongest' };
   const LEVELS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
   // Over http(s), a direction's clips are fetched into memory as soon as it opens: switching is
   // instant and seeking works even on servers without range requests (python -m http.server).
@@ -34,8 +39,12 @@
     auto: $('auto'),
     prev: $('prev'),
     next: $('next'),
-    lists: { neg: $('list-neg'), pos: $('list-pos') },
-    notes: { neg: $('note-neg'), pos: $('note-pos') },
+    keysSide: $('keys-side'),
+    fader: $('fader'),
+    faderInput: $('fader-input'),
+    columns: { neg: $('column-neg'), mid: $('column-mid'), pos: $('column-pos') },
+    lists: { neg: $('list-neg'), mid: $('list-mid'), pos: $('list-pos') },
+    notes: { neg: $('note-neg'), mid: $('note-mid'), pos: $('note-pos') },
     details: $('details'),
     detailsTitle: $('details-title'),
     detailsMeta: $('details-meta'),
@@ -48,7 +57,8 @@
   const state = {
     exp: null,
     dir: null,
-    clips: { neg: [], pos: [] },
+    clips: { neg: [], mid: [], pos: [] },
+    fader: false, // the open experiment has middle examples: one group at a time
     sel: { side: 'neg', rank: 0 }, // keyboard cursor
     current: null, // clip the user last asked to play; the only one that shows progress
     loaded: null, // clip whose audio is in the player
@@ -90,7 +100,8 @@
 
   const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
   const encodePath = (path) => path.split('/').map(encodeURIComponent).join('/');
-  const allClips = () => [...state.clips.neg, ...state.clips.pos];
+  const allClips = () => SIDES.flatMap((side) => state.clips[side]);
+  const sidesWithClips = () => SIDES.filter((side) => state.clips[side].length);
   const selectedClip = () => state.clips[state.sel.side][state.sel.rank];
   const isPlaying = () => state.pending || (state.loaded !== null && !player.paused);
   const durationOf = (clip) => clip.duration || (clip === state.loaded && player.duration) || 0;
@@ -145,7 +156,7 @@
     const li = document.createElement('li');
     li.className = 'clip';
     li.innerHTML = `
-      <span class="rank" title="Rank ${clip.rank + 1} (1 = strongest)">${clip.rank + 1}</span>
+      <span class="rank" title="Rank ${clip.rank + 1} (1 = ${RANK_MEANS[clip.side]})">${clip.rank + 1}</span>
       <button class="play" type="button">${ICONS}</button>
       <canvas class="wave" aria-hidden="true"></canvas>
       <div class="clip-foot">
@@ -209,7 +220,7 @@
   function readPalette() {
     const css = getComputedStyle(document.documentElement);
     const v = (name) => css.getPropertyValue(name).trim();
-    palette = { neg: v('--neg'), pos: v('--pos'), peak: v('--wave-peak'), rms: v('--wave-rms'), cursor: v('--muted') };
+    palette = { neg: v('--neg'), mid: v('--mid'), pos: v('--pos'), peak: v('--wave-peak'), rms: v('--wave-rms'), cursor: v('--muted') };
   }
 
   /** Outline of an envelope mirrored around the midline, one point per bucket. */
@@ -486,10 +497,23 @@
     rank = Math.max(0, Math.min(list.length - 1, rank));
     const changed = side !== state.sel.side || rank !== state.sel.rank;
     state.sel = { side, rank };
+    showSide(side);
     for (const clip of allClips()) clip.el.classList.toggle('selected', clip === list[rank]);
     showDetails(list[rank]);
     if (changed) list[rank].el.scrollIntoView({ block: 'nearest' });
     if (follow && changed && isPlaying()) play(list[rank]);
+  }
+
+  /** Two-column experiments show negative | positive; fader experiments show only `side`. */
+  function showSide(side) {
+    for (const s of SIDES) ui.columns[s].hidden = state.fader ? s !== side : s === 'mid';
+    if (!state.fader) return;
+    ui.fader.className = `fader ${side}`;
+    ui.faderInput.value = SIDES.indexOf(side);
+    ui.faderInput.setAttribute('aria-valuetext', SIDE_NAME[side]);
+    for (const stop of ui.fader.querySelectorAll('[data-side]')) {
+      stop.setAttribute('aria-pressed', String(stop.dataset.side === side));
+    }
   }
 
   /** Full prompt of the selected example (cards only show the first two lines). */
@@ -545,7 +569,9 @@
       /* some browsers refuse history updates for file:// pages */
     }
 
-    select(state.sel.side, state.sel.rank, { follow: false });
+    // Keep the side across directions, unless this one has no examples there (e.g. no middle).
+    const side = state.clips[state.sel.side].length ? state.sel.side : sidesWithClips()[0];
+    if (side) select(side, state.sel.rank, { follow: false });
     if (resume) play(selectedClip());
     prefetch();
   }
@@ -566,11 +592,15 @@
 
   function openExperiment(exp, dirId) {
     state.exp = exp;
+    state.fader = exp.directions.some((d) => d.mid?.length);
     ui.experiment.value = exp.name;
+    ui.main.classList.toggle('single', state.fader);
+    ui.fader.hidden = !state.fader;
+    ui.keysSide.textContent = state.fader ? 'Move the fader (− / 0 / +)' : 'Negative / positive side';
 
-    const sizes = new Set(exp.directions.flatMap((d) => [d.neg.length, d.pos.length]));
+    const sizes = new Set(exp.directions.flatMap((d) => SIDES.filter((side) => d[side]).map((side) => d[side].length)));
     const perSide = sizes.size === 1 ? `${[...sizes][0]}` : `up to ${Math.max(...sizes)}`;
-    ui.summary.textContent = `${exp.directions.length} directions · ${perSide} examples per side`;
+    ui.summary.textContent = `${exp.directions.length} directions · ${perSide} examples per ${state.fader ? 'group' : 'side'}`;
 
     ui.grid.replaceChildren(
       ...exp.directions.map((dir) => {
@@ -604,7 +634,10 @@
       /* malformed escape: use it as typed */
     }
     const [, name, id] = /^(.*?)(?:[./](\d+))?$/.exec(hash);
-    const exp = manifest.experiments.find((e) => e.name === name) || manifest.experiments[0];
+    const exp =
+      manifest.experiments.find((e) => e.name === name) ||
+      manifest.experiments.find((e) => e.name === DEFAULT_EXPERIMENT) ||
+      manifest.experiments[0];
     const dirId = Number.parseInt(id, 10);
     if (exp !== state.exp) openExperiment(exp, dirId);
     else openDirection(exp.directions.find((d) => d.id === dirId));
@@ -614,7 +647,8 @@
 
   document.addEventListener('keydown', (event) => {
     if (!state.dir || event.metaKey || event.ctrlKey || event.altKey) return;
-    if (event.target.closest?.('select, input, textarea')) return;
+    // The fader is a range input, but its arrows should still mean what they mean everywhere else.
+    if (event.target.closest?.('select, input:not([type="range"]), textarea')) return;
     const { side, rank } = state.sel;
     switch (event.key) {
       case ' ':
@@ -627,11 +661,13 @@
         select(side, rank + 1);
         break;
       case 'ArrowLeft':
-        select('neg', rank);
+      case 'ArrowRight': {
+        // One step along neg → mid → pos (just neg ↔ pos for two-column experiments), same rank.
+        const sides = sidesWithClips();
+        const i = sides.indexOf(side) + (event.key === 'ArrowLeft' ? -1 : 1);
+        select(sides[Math.max(0, Math.min(sides.length - 1, i))], rank);
         break;
-      case 'ArrowRight':
-        select('pos', rank);
-        break;
+      }
       case '[':
         step(-1);
         break;
@@ -690,6 +726,10 @@
       openExperiment(manifest.experiments.find((e) => e.name === ui.experiment.value), state.dir?.id);
       ui.experiment.blur();
     });
+    ui.faderInput.addEventListener('input', () => select(SIDES[ui.faderInput.value], state.sel.rank));
+    for (const stop of ui.fader.querySelectorAll('[data-side]')) {
+      stop.addEventListener('click', () => select(stop.dataset.side, state.sel.rank));
+    }
     ui.auto.addEventListener('click', () => setAutoAdvance(!state.autoAdvance));
     ui.prev.addEventListener('click', () => step(-1));
     ui.next.addEventListener('click', () => step(1));

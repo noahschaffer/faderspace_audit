@@ -1,4 +1,5 @@
-/* Two panes: direction picker on the left, negative | positive columns on the right. */
+/* Two panes: direction picker on the left, negative | positive columns on the right
+   (or, for experiments with middle examples, a neg / mid / pos fader over one list). */
 :root {
   color-scheme: light dark;
   --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -15,8 +16,10 @@
   --muted: #8a94a6;
   --neg: #2563eb;
   --pos: #e8590c;
+  --mid: #475467;
   --neg-soft: rgb(37 99 235 / .06);
   --pos-soft: rgb(232 89 12 / .06);
+  --mid-soft: rgb(71 84 103 / .06);
   --on-accent: #ffffff;
   --wave-peak: #dde1e7;
   --wave-rms: #a3acba;
@@ -38,8 +41,10 @@
     --muted: #6f7888;
     --neg: #5b9dff;
     --pos: #ff8a3d;
+    --mid: #c3cad5;
     --neg-soft: rgb(91 157 255 / .09);
     --pos-soft: rgb(255 138 61 / .09);
+    --mid-soft: rgb(195 202 213 / .07);
     --on-accent: #0b0d11;
     --wave-peak: #272d37;
     --wave-rms: #4c5464;
@@ -331,6 +336,11 @@ h1 {
 
 .neg { --accent: var(--neg); --accent-soft: var(--neg-soft); }
 .pos { --accent: var(--pos); --accent-soft: var(--pos-soft); }
+.mid { --accent: var(--mid); --accent-soft: var(--mid-soft); }
+
+/* Fader experiments show one list at a time, kept to a readable width. */
+.main.single > * { max-width: 1000px; }
+.main.single .columns { grid-template-columns: minmax(0, 1fr); }
 
 .col-head {
   display: flex;
@@ -374,6 +384,112 @@ h1 {
   padding: 0;
   list-style: none;
 }
+
+/* ---------- fader ---------- */
+
+/* A range input dressed as a mixer fader: a three-stop track, and a cap in the colour of the
+   group on show. The stop labels sit under the cap's three resting places. */
+.fader {
+  --cap-w: 34px;
+  --stop: radial-gradient(circle, var(--panel) 0 2px, transparent 2.5px);
+  margin-bottom: 22px;
+  padding: 12px 18px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.fader input {
+  display: block;
+  width: 100%;
+  height: 30px;
+  margin: 0;
+  background: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.fader input:focus-visible { outline: none; }
+
+.fader input::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background:
+    var(--stop) calc(var(--cap-w) / 2 - 3px) 50% / 6px 6px no-repeat,
+    var(--stop) 50% 50% / 6px 6px no-repeat,
+    var(--stop) calc(100% - var(--cap-w) / 2 + 3px) 50% / 6px 6px no-repeat,
+    linear-gradient(90deg, var(--neg), color-mix(in srgb, var(--mid) 50%, var(--border)), var(--pos));
+}
+
+.fader input::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background:
+    var(--stop) calc(var(--cap-w) / 2 - 3px) 50% / 6px 6px no-repeat,
+    var(--stop) 50% 50% / 6px 6px no-repeat,
+    var(--stop) calc(100% - var(--cap-w) / 2 + 3px) 50% / 6px 6px no-repeat,
+    linear-gradient(90deg, var(--neg), color-mix(in srgb, var(--mid) 50%, var(--border)), var(--pos));
+}
+
+.fader input::-webkit-slider-thumb {
+  width: var(--cap-w);
+  height: 22px;
+  margin-top: -8px;
+  border: 0;
+  border-radius: 6px;
+  background: linear-gradient(var(--on-accent), var(--on-accent)) center / 2px 12px no-repeat, var(--accent);
+  box-shadow: 0 0 0 3px var(--panel), 0 2px 6px 3px rgb(16 24 40 / .16);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.fader input::-moz-range-thumb {
+  width: var(--cap-w);
+  height: 22px;
+  border: 0;
+  border-radius: 6px;
+  background: linear-gradient(var(--on-accent), var(--on-accent)) center / 2px 12px no-repeat, var(--accent);
+  box-shadow: 0 0 0 3px var(--panel), 0 2px 6px 3px rgb(16 24 40 / .16);
+}
+
+.fader input:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--accent); outline-offset: 4px; }
+.fader input:focus-visible::-moz-range-thumb { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+.fader-stops {
+  position: relative;
+  height: 44px;
+  margin: 2px calc(var(--cap-w) / 2) 0;
+}
+
+.fader-stops button {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.fader-stops [data-side="neg"] { left: 0; }
+.fader-stops [data-side="mid"] { left: 50%; }
+.fader-stops [data-side="pos"] { left: 100%; }
+
+.fader-stops button:hover { color: var(--text); }
+.fader-stops button[aria-pressed="true"] { color: var(--text); font-weight: 600; }
+.fader-stops .sign { width: 18px; height: 18px; border-radius: 5px; font-size: 13px; opacity: .4; transition: opacity .12s; }
+.fader-stops button:hover .sign,
+.fader-stops button[aria-pressed="true"] .sign { opacity: 1; }
 
 /* ---------- clip card ---------- */
 

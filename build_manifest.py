@@ -5,8 +5,12 @@ Expected layout:
 
     assets/<experiment>/direction_<k>/neg_<rank>_<key>_<value>[_<key>_<value>...].wav
     assets/<experiment>/direction_<k>/pos_<rank>_<key>_<value>[_<key>_<value>...].wav
+    assets/<experiment>/direction_<k>/mid_<rank>_<key>_<value>[_<key>_<value>...].wav   (optional)
     assets/<experiment>/prompts.txt                 (optional; or the folder's only .txt file)
     assets/<experiment>/.hydra/config.yaml          (optional, shown in the sidebar)
+
+mid_ clips are examples from the middle of the direction (activation near zero); the page shows
+experiments that have them with a neg / mid / pos slider instead of two columns.
 
 The prompt list has one prompt per line: line N (counting from 0) is shown on every clip
 whose file name says prompt_N.
@@ -43,8 +47,9 @@ except ImportError:  # Python < 3.12
 
 
 HERE = Path(__file__).resolve().parent
+SIDES = ("neg", "mid", "pos")  # mid is optional: a direction only gets the key if it has middle examples
 DIRECTION_RE = re.compile(r"direction_(\d+)")
-CLIP_RE = re.compile(r"(neg|pos)_(\d+)(?:_(.*))?")
+CLIP_RE = re.compile(r"(neg|mid|pos)_(\d+)(?:_(.*))?")
 META_RE = re.compile(r"([A-Za-z]+)_(-?\d+(?:\.\d+)?)")
 AUDIO_EXTS = {".wav", ".mp3", ".flac", ".ogg", ".oga", ".m4a", ".aac", ".webm"}
 
@@ -144,7 +149,7 @@ def build_experiment(exp_dir, site_root):
                 continue
             parsed = parse_clip(f)
             if not parsed:
-                print(f"  skipping {f}: name should start with neg_<rank> or pos_<rank>", file=sys.stderr)
+                print(f"  skipping {f}: name should start with neg_<rank>, mid_<rank> or pos_<rank>", file=sys.stderr)
                 continue
             side, rank, meta = parsed
             clip = {"file": f.name, "rank": rank, "meta": meta}
@@ -154,9 +159,10 @@ def build_experiment(exp_dir, site_root):
                     clip["dur"] = round(duration, 3)
                 if peak:
                     clip["peak"], clip["rms"] = peak, rms
-            direction[side].append(clip)
-        for side in ("neg", "pos"):
-            direction[side].sort(key=lambda clip: clip["rank"])
+            direction.setdefault(side, []).append(clip)
+        for side in SIDES:
+            if side in direction:
+                direction[side].sort(key=lambda clip: clip["rank"])
         directions.append(direction)
     directions.sort(key=lambda d: d["id"])
 
@@ -164,7 +170,7 @@ def build_experiment(exp_dir, site_root):
     prompts = read_prompts(exp_dir)
     if prompts is not None:
         experiment["prompts"] = prompts
-        clips = [clip for d in directions for side in ("neg", "pos") for clip in d[side]]
+        clips = [clip for d in directions for side in SIDES for clip in d.get(side, [])]
         unmatched = sum(1 for clip in clips if not (isinstance(group_id(clip), int) and 0 <= group_id(clip) < len(prompts)))
         if unmatched:
             print(f"  {exp_dir.name}: {unmatched} clips have no line in the {len(prompts)}-line prompt list", file=sys.stderr)
@@ -185,7 +191,7 @@ def index_assets(assets, site_root):
         if not experiment["directions"]:
             continue
         experiments.append(experiment)
-        clips = sum(len(d["neg"]) + len(d["pos"]) for d in experiment["directions"])
+        clips = sum(len(d.get(side, [])) for d in experiment["directions"] for side in SIDES)
         prompts = f", {len(experiment['prompts'])} prompts" if "prompts" in experiment else ""
         print(f"{exp_dir.name}: {len(experiment['directions'])} directions, {clips} clips{prompts} ({time.perf_counter() - start:.1f}s)")
     return {"experiments": experiments}

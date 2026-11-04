@@ -48,7 +48,7 @@
         <dl>
           <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
           <dt><kbd>↑</kbd><kbd>↓</kbd></dt><dd>Previous / next example</dd>
-          <dt><kbd>←</kbd><kbd>→</kbd></dt><dd>Negative / positive side</dd>
+          <dt><kbd>←</kbd><kbd>→</kbd></dt><dd id="keys-side">Negative / positive side</dd>
           <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Play rank</dd>
           <dt><kbd>[</kbd><kbd>]</kbd></dt><dd>Previous / next direction</dd>
           <dt><kbd>A</kbd></dt><dd>Toggle auto-advance</dd>
@@ -81,15 +81,32 @@
         </div>
       </header>
 
+      <!-- Experiments with middle examples show one group at a time, picked with this fader. -->
+      <section class="fader" id="fader" aria-label="Examples to show" hidden>
+        <input type="range" id="fader-input" min="0" max="2" step="1" value="0" aria-label="Examples to show">
+        <div class="fader-stops">
+          <button class="neg" type="button" data-side="neg"><span class="sign" aria-hidden="true">−</span>Negative</button>
+          <button class="mid" type="button" data-side="mid"><span class="sign" aria-hidden="true">0</span>Middle</button>
+          <button class="pos" type="button" data-side="pos"><span class="sign" aria-hidden="true">+</span>Positive</button>
+        </div>
+      </section>
+
       <div class="columns">
-        <section class="column neg" aria-labelledby="head-neg">
+        <section class="column neg" id="column-neg" aria-labelledby="head-neg">
           <header class="col-head">
             <h2 id="head-neg"><span class="sign" aria-hidden="true">−</span>Negative</h2>
             <span class="col-note" id="note-neg"></span>
           </header>
           <ol class="clips" id="list-neg"></ol>
         </section>
-        <section class="column pos" aria-labelledby="head-pos">
+        <section class="column mid" id="column-mid" aria-labelledby="head-mid" hidden>
+          <header class="col-head">
+            <h2 id="head-mid"><span class="sign" aria-hidden="true">0</span>Middle</h2>
+            <span class="col-note" id="note-mid"></span>
+          </header>
+          <ol class="clips" id="list-mid"></ol>
+        </section>
+        <section class="column pos" id="column-pos" aria-labelledby="head-pos">
           <header class="col-head">
             <h2 id="head-pos"><span class="sign" aria-hidden="true">+</span>Positive</h2>
             <span class="col-note" id="note-pos"></span>

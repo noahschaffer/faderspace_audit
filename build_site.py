@@ -27,7 +27,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from build_manifest import HERE, index_assets, write_manifest
+from build_manifest import HERE, SIDES, index_assets, write_manifest
 
 OUT = HERE / "docs"
 PAGE_FILES = ("index.html", "app.js", "style.css")
@@ -37,8 +37,8 @@ MAX_SITE_BYTES = 1024**3  # GitHub Pages refuses to publish a bigger site
 def clips_of(manifest):
     for experiment in manifest["experiments"]:
         for direction in experiment["directions"]:
-            for side in ("neg", "pos"):
-                for clip in direction[side]:
+            for side in SIDES:
+                for clip in direction.get(side, []):
                     yield experiment, direction, clip
 
 
@@ -78,7 +78,7 @@ def main():
         for experiment in manifest["experiments"]:
             for direction in experiment["directions"]:
                 bundle = bytearray()
-                for clip in direction["neg"] + direction["pos"]:
+                for clip in (clip for side in SIDES for clip in direction.get(side, [])):
                     data = mp3_of(direction, clip).read_bytes()
                     clip["bytes"] = [len(bundle), len(bundle) + len(data)]
                     bundle += data
