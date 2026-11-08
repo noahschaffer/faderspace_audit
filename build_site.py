@@ -32,6 +32,8 @@ from build_manifest import HERE, SIDES, index_assets, write_manifest
 OUT = HERE / "docs"
 PAGE_FILES = ("index.html", "app.js", "style.css")
 MAX_SITE_BYTES = 1024**3  # GitHub Pages refuses to publish a bigger site
+# Experiments left out of the published site (the local page still shows them).
+UNPUBLISHED = {"musiccaps_jazz", "musiccaps_trumpet"}
 
 
 def clips_of(manifest):
@@ -58,7 +60,7 @@ def main():
     if not shutil.which("ffmpeg"):
         sys.exit("ffmpeg is required (brew install ffmpeg)")
 
-    manifest = index_assets(args.assets, HERE)
+    manifest = index_assets(args.assets, HERE, skip=UNPUBLISHED)
     start = time.perf_counter()
     shutil.rmtree(OUT / "audio", ignore_errors=True)
 

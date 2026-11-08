@@ -180,12 +180,12 @@ def build_experiment(exp_dir, site_root):
     return experiment
 
 
-def index_assets(assets, site_root):
-    """Manifest for every experiment under `assets`, with paths relative to `site_root`."""
+def index_assets(assets, site_root, skip=()):
+    """Manifest for every experiment under `assets` (except those named in `skip`), with paths relative to `site_root`."""
     if not assets.is_dir():
         sys.exit(f"No assets folder at {assets}")
     experiments = []
-    for exp_dir in sorted(p for p in assets.resolve().iterdir() if p.is_dir() and not p.name.startswith(".")):
+    for exp_dir in sorted(p for p in assets.resolve().iterdir() if p.is_dir() and not p.name.startswith(".") and p.name not in skip):
         start = time.perf_counter()
         experiment = build_experiment(exp_dir, site_root)
         if not experiment["directions"]:
