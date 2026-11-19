@@ -48,8 +48,9 @@ This rewrites `docs/`: the same page, its manifest, and one MP3 per direction
 cuts each clip out by byte range). An experiment with 10 clips per direction comes to about 150 MB, one with
 middle examples (15 per direction) about 230 MB, and GitHub Pages takes sites up to 1 GB. To check it locally, open http://localhost:8000/docs/ with the server from step 3.
 
-Experiments named in `UNPUBLISHED` at the top of `build_site.py` are left out of `docs/` (currently
-`musiccaps_jazz` and `musiccaps_trumpet`); the local page still shows every experiment.
+Only experiments whose names match a pattern in `PUBLISHED` at the top of `build_site.py` go into `docs/`
+(currently `magentart_midi_*`, so new midi runs are published automatically); the local page still shows
+every experiment.
 
 `assets/` and the local `manifest.js` are not committed (see `.gitignore`), so the repository holds the
 code and `docs/`.
@@ -68,7 +69,7 @@ One-time setup:
    folder `/docs`, and save.
 
 The page appears at https://noahschaffer.github.io/faderspace_audit/ a minute or two later. Links to a
-direction look like `https://noahschaffer.github.io/faderspace_audit/#magentart_trumpet_6k.17`.
+direction look like `https://noahschaffer.github.io/faderspace_audit/#magentart_midi_trumpet.17`.
 
 To update it, re-run `python3 build_site.py`, then commit and push. The site is public: anyone with the
 link can listen, and the "Run config" panel shows the cluster path from `.hydra/config.yaml`.
@@ -87,6 +88,6 @@ link can listen, and the "Run config" panel shows the cluster path from `.hydra/
 
 Click a waveform to play from that point. Hover a clip's prompt number to highlight the other examples from the same prompt.
 Cards show the first two lines of each prompt; the bar at the bottom shows the selected example's full prompt.
-The URL tracks the experiment and direction (`#magentart_trumpet_6k.17`), so links reopen the same view.
+The URL tracks the experiment and direction (`#magentart_midi_trumpet.17`), so links reopen the same view.
 Without one, the page opens `DEFAULT_EXPERIMENT` (set at the top of `app.js`), or the first experiment if
 that one isn't there.
